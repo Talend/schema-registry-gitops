@@ -48,6 +48,7 @@ class Persistence(
 
             State(
                 yaml.compatibility?.let { Compatibility.valueOf(it) },
+                yaml.normalize,
                 yaml.subjects?.map {
                     Subject(
                         it.name,
@@ -67,6 +68,8 @@ class Persistence(
     fun save(state: State, outputStream: OutputStream) {
         val yaml = Yaml(
             (state.compatibility ?: Compatibility.NONE).toString(),
+            // default by confluent schema registry
+            state.normalize ?: false,
             state.subjects.map {
                 YamlSubject(
                     it.name,
@@ -84,9 +87,16 @@ class Persistence(
         mapper.writeValue(outputStream, yaml)
     }
 
-    data class Yaml(val compatibility: String?, val subjects: List<YamlSubject>?)
+    data class Yaml(val compatibility: String?, val normalize: Boolean?, val subjects: List<YamlSubject>?)
     data class YamlSubjectReference(val name: String, val subject: String, val version: Int)
-    data class YamlSubject(val name: String, val file: String?, val type: String?, val schema: String?, val compatibility: String?, val references: List<YamlSubjectReference> = emptyList()) {
+    data class YamlSubject(
+        val name: String,
+        val file: String?,
+        val type: String?,
+        val schema: String?,
+        val compatibility: String?,
+        val references: List<YamlSubjectReference> = emptyList()
+    ) {
         fun parseSchema(basePath: File, schemaRegistryClient: CachedSchemaRegistryClient): ParsedSchema {
             val t = type ?: "AVRO"
 
@@ -107,7 +117,12 @@ class Persistence(
             return optional.get()
         }
 
-        private fun doParseSchema(client: CachedSchemaRegistryClient, t: String, schemaString: String, schemaReferences: List<SchemaReference>?): Optional<ParsedSchema>? {
+        private fun doParseSchema(
+            client: CachedSchemaRegistryClient,
+            t: String,
+            schemaString: String,
+            schemaReferences: List<SchemaReference>?
+        ): Optional<ParsedSchema>? {
             return client.parseSchema(t, schemaString, schemaReferences ?: emptyList())
         }
     }

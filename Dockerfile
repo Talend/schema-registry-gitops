@@ -1,17 +1,17 @@
-FROM amazoncorretto:17-alpine AS tester
+FROM amazoncorretto:17.0.14-alpine AS tester
 
 WORKDIR /home/cuser
 
-ADD ./gradle /home/cuser/gradle
-ADD ./gradlew ./gradle.properties ./build.gradle.kts ./settings.gradle.kts /home/cuser/
+COPY ./gradle /home/cuser/gradle
+COPY ./gradlew ./gradle.properties ./build.gradle.kts ./settings.gradle.kts ./.editorconfig /home/cuser/
 RUN ./gradlew --no-daemon build
-ADD ./src /home/cuser/src
+COPY ./src /home/cuser/src
 RUN ./gradlew --no-daemon check
 
 FROM tester AS builder
 RUN ./gradlew --no-daemon shadowJar
 
-FROM amazoncorretto:17-alpine AS distribution
+FROM amazoncorretto:17.0.14-alpine AS distribution
 COPY --from=builder /home/cuser/build/libs/schema-registry-gitops.jar /home/cuser/schema-registry-gitops.jar
 
 WORKDIR /home/cuser

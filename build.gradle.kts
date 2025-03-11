@@ -1,20 +1,18 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import org.jetbrains.gradle.ext.ProjectSettings
-import org.jetbrains.gradle.ext.TaskTriggersConfig
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     java
-    kotlin("jvm") version "1.9.22"
-    kotlin("plugin.spring") version "1.9.22"
+    kotlin("jvm") version "1.9.25"
+    kotlin("plugin.spring") version "2.1.10"
     id("com.github.johnrengelman.shadow") version "8.1.1"
-    id("org.jlleitschuh.gradle.ktlint") version "11.6.1"
-    id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.7"
+    id("org.jlleitschuh.gradle.ktlint") version "12.2.0"
+    id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.10"
     jacoco
 }
 
 group = "dev.domnikl"
-version = "1.9.0"
+version = "1.12.0"
 
 repositories {
     mavenCentral()
@@ -26,34 +24,34 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
 
-    implementation("info.picocli:picocli:4.7.5")
+    implementation("info.picocli:picocli:4.7.6")
 
-    implementation("org.slf4j:slf4j-api:2.0.12")
-    implementation("ch.qos.logback:logback-classic:1.4.14")
-    implementation("ch.qos.logback:logback-core:1.4.14")
+    implementation("org.slf4j:slf4j-api:2.0.17")
+    implementation("ch.qos.logback:logback-classic:1.5.17")
+    implementation("ch.qos.logback:logback-core:1.5.17")
 
-    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.16.1")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.16.1")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1")
+    implementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.18.3")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.18.3")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.3")
     constraints {
-        implementation("com.google.code.gson:gson:2.8.9") {
+        implementation("com.google.code.gson:gson:2.12.1") {
             because("CVE-2022-25647")
         }
-        implementation("org.apache.commons:commons-compress:1.24.0") {
+        implementation("org.apache.commons:commons-compress:1.27.1") {
             because("CVE-2023-42503")
         }
     }
 
-    implementation("io.confluent:kafka-schema-registry-client:7.6.0")
-    implementation("io.confluent:kafka-protobuf-serializer:7.6.0")
-    implementation("io.confluent:kafka-json-schema-serializer:7.6.0")
+    implementation("io.confluent:kafka-schema-registry-client:7.9.0")
+    implementation("io.confluent:kafka-protobuf-serializer:7.9.0")
+    implementation("io.confluent:kafka-json-schema-serializer:7.9.0")
     implementation("com.github.everit-org.json-schema:org.everit.json.schema:1.14.4")
 
-    implementation("io.github.java-diff-utils:java-diff-utils:4.12")
+    implementation("io.github.java-diff-utils:java-diff-utils:4.15")
 
-    testImplementation(platform("org.junit:junit-bom:5.10.2"))
+    testImplementation(platform("org.junit:junit-bom:5.12.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("io.mockk:mockk:1.13.9")
+    testImplementation("io.mockk:mockk:1.13.17")
     testImplementation("com.github.stefanbirkner:system-rules:1.19.0")
 }
 
@@ -82,18 +80,6 @@ tasks {
 
         manifest {
             attributes["Main-Class"] = "dev.domnikl.schemaregistrygitops.MainKt"
-        }
-    }
-}
-
-idea {
-    project {
-        this as ExtensionAware
-        configure<ProjectSettings> {
-            this as ExtensionAware
-            configure<TaskTriggersConfig> {
-                afterSync(tasks.findByName("ktlintApplyToIdea"))
-            }
         }
     }
 }

@@ -1,17 +1,23 @@
 package dev.domnikl.schemaregistrygitops
 
-data class State(val compatibility: Compatibility?, val subjects: List<Subject>) {
+data class State(val compatibility: Compatibility?, val normalize: Boolean? = false, val subjects: List<Subject>) {
     init {
         val duplicates = subjects.duplicatesBy { it.name }
 
-        require(duplicates.isEmpty()) { "State in YAML configuration is invalid: duplicated subject(s) '${duplicates.joinToString("', '")}' found" }
+        require(duplicates.isEmpty()) {
+            "State in YAML configuration is invalid: duplicated subject(s) '${duplicates.joinToString("', '")}' found"
+        }
     }
 
     fun merge(other: State): State {
         val a = subjects.associateBy { it.name }
         val b = other.subjects.associateBy { it.name }
 
-        return State(other.compatibility ?: compatibility, (a + b).map { it.value })
+        return State(
+            other.compatibility ?: compatibility,
+            other.normalize ?: normalize,
+            (a + b).map { it.value }
+        )
     }
 }
 
