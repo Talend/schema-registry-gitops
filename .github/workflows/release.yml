@@ -2,25 +2,33 @@ name: Publish Docker image
 
 on:
   release:
-    types: [published]
+    types: [created]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}    
 
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
       - name: Log in to the container registry
         uses: docker/login-action@327cd5a69de6c009b9ce71bce8395f28e651bf99
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@902fa8ec7d6ecbf8d84d538b9b233a880e428804
         with:
-          images: domnikl/schema-registry-gitops
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -29,7 +37,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           call: check
-      - name: Build
+      - name: Build and  push Docker Image
         uses: docker/build-push-action@v6
         with:
           context: .
