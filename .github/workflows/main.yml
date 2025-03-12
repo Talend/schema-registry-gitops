@@ -21,5 +21,5 @@ jobs:
         with:
           context: .
           push: false
-          tags: domnikl/schema-registry-gitops
+          tags: talend/schema-registry-gitops
           platforms: linux/amd64,linux/arm64
