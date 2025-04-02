@@ -13,8 +13,18 @@ class SchemaRegistryClient(private val client: CachedSchemaRegistryClient) {
         return Compatibility.valueOf(client.getCompatibility(""))
     }
 
+    fun normalize(): Boolean {
+        return client.getConfig("").isNormalize ?: false
+    }
+
     fun updateGlobalCompatibility(compatibility: Compatibility): Compatibility {
         return Compatibility.valueOf(client.updateCompatibility("", compatibility.toString()))
+    }
+
+    fun updateNormalize(normalize: Boolean) {
+        val config = client.getConfig("")
+        config.isNormalize = normalize
+        client.updateConfig("", config)
     }
 
     fun compatibility(subject: String): Compatibility {
@@ -73,7 +83,8 @@ class SchemaRegistryClient(private val client: CachedSchemaRegistryClient) {
         } catch (e: RestClientException) {
             throw when (e.errorCode) {
                 ERROR_CODE_UNPROCESSABLE_ENTITY -> ServerVersionMismatchException(
-                    "Possible server version mismatch. Note that types other than 'AVRO' are not supported for server versions prior to 5.5",
+                    "Possible server version mismatch. " +
+                        "Note that types other than 'AVRO' are not supported for server versions prior to 5.5",
                     e
                 )
                 else -> e

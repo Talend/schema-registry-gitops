@@ -1,6 +1,6 @@
 package dev.domnikl.schemaregistrygitops.state
 
-import com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException
+import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import dev.domnikl.schemaregistrygitops.Compatibility
 import dev.domnikl.schemaregistrygitops.SchemaParseException
 import dev.domnikl.schemaregistrygitops.State
@@ -63,6 +63,16 @@ class PersistenceTest {
         val state = loader.load(fromResources("schemas"), listOf(fromResources("only_compatibility.yml")))
 
         assertEquals(Compatibility.FORWARD, state.compatibility)
+        assertEquals(null, state.normalize)
+        assertEquals(emptyList<Subject>(), state.subjects)
+    }
+
+    @Test
+    fun `can load file with only normalize`() {
+        val state = loader.load(fromResources("schemas"), listOf(fromResources("only_normalize.yml")))
+
+        assertEquals(null, state.compatibility)
+        assertEquals(true, state.normalize)
         assertEquals(emptyList<Subject>(), state.subjects)
     }
 
@@ -121,12 +131,29 @@ class PersistenceTest {
         val schemaString = stringFromResources("schemas/with_subjects_and_references.avsc")
         val schema = mockk<ParsedSchema>()
 
-        every { schemaRegistryClient.parseSchema("AVRO", schemaString, listOf(SchemaReference("dev.domnikl.schema_registry_gitops.foo", "foo", 1))) } returns Optional.of(schema)
+        every {
+            schemaRegistryClient.parseSchema(
+                "AVRO",
+                schemaString,
+                listOf(SchemaReference("dev.domnikl.schema_registry_gitops.foo", "foo", 1))
+            )
+        } returns Optional.of(schema)
 
         val state = loader.load(fromResources("schemas"), listOf(fromResources("with_subjects_and_references.yml")))
 
         assertNull(state.compatibility)
-        assertEquals(listOf(Subject("bar", null, schema, listOf(SchemaReference("dev.domnikl.schema_registry_gitops.foo", "foo", 1)))), state.subjects)
+
+        assertEquals(
+            listOf(
+                Subject(
+                    "bar",
+                    null,
+                    schema,
+                    listOf(SchemaReference("dev.domnikl.schema_registry_gitops.foo", "foo", 1))
+                )
+            ),
+            state.subjects
+        )
     }
 
     @Test
@@ -189,7 +216,7 @@ class PersistenceTest {
 
     @Test
     fun `throws exception when subject name is missing`() {
-        assertThrows<MissingKotlinParameterException> {
+        assertThrows<MismatchedInputException> {
             loader.load(fromResources("schemas"), listOf(fromResources("subject_name_is_missing.yml")))
         }
     }
@@ -209,6 +236,7 @@ class PersistenceTest {
 
         val currentState = State(
             Compatibility.BACKWARD_TRANSITIVE,
+            false,
             listOf(
                 Subject("foobar-value", null, schema1),
                 Subject("foobar-key", Compatibility.FULL, schema2)
@@ -226,6 +254,7 @@ class PersistenceTest {
 
         val currentState = State(
             null,
+            null,
             emptyList()
         )
 
@@ -234,6 +263,30 @@ class PersistenceTest {
         val expectedOutput =
             """
                 compatibility: NONE
+                normalize: false
+                subjects: []
+
+            """.trimIndent()
+
+        assertEquals(expectedOutput, outputStream.toString())
+    }
+
+    @Test
+    fun `can save state to a file with normalize set`() {
+        val outputStream = ByteArrayOutputStream()
+
+        val currentState = State(
+            null,
+            true,
+            emptyList()
+        )
+
+        loader.save(currentState, outputStream)
+
+        val expectedOutput =
+            """
+                compatibility: NONE
+                normalize: true
                 subjects: []
 
             """.trimIndent()
